@@ -1,4 +1,3 @@
-// models/plantaModel.js - VERSIÓN CORREGIDA CON NOMBRES DE TABLAS EN INGLÉS
 import { executeQuery } from '../db/connectDB.js';
 
 export class PlantaData {
@@ -107,6 +106,56 @@ export class PlantaData {
         const plantData = await executeQuery(query, [userId]);
         return plantData[0] || null;
     }
+
+// READ - Obtener el ÚLTIMO dato de CADA planta del usuario
+static async findRecentByUserId(userId, limit = 5) {
+    try {
+        console.log(`🔍 BUSCANDO ÚLTIMO DATO DE CADA PLANTA - userId: ${userId}`);
+
+        // ✅ SOLUCIÓN: Obtener solo el registro más reciente de cada planta
+        const query = `
+            SELECT 
+                pd.*,
+                p.name as plantName,
+                p.location,
+                up.role
+            FROM plant_data pd
+            INNER JOIN (
+                -- Subconsulta: Encontrar el timestamp más reciente para cada planta
+                SELECT plantId, MAX(timestamp) as max_timestamp
+                FROM plant_data 
+                GROUP BY plantId
+            ) latest ON pd.plantId = latest.plantId AND pd.timestamp = latest.max_timestamp
+            INNER JOIN plants p ON pd.plantId = p.id
+            INNER JOIN user_plants up ON p.id = up.plantId
+            WHERE up.userId = ${userId} 
+                AND up.isActive = TRUE
+                AND p.isActive = TRUE
+            ORDER BY pd.timestamp DESC
+            LIMIT ${limit}
+        `;
+
+        console.log('🔍 Query para último dato de cada planta');
+        
+        const result = await executeQuery(query);
+        
+        console.log(`✅ ${result.length} plantas con sus últimos datos encontrados`);
+        
+        // ✅ Debug: mostrar qué plantas se encontraron
+        if (result.length > 0) {
+            console.log('🌿 Plantas únicas encontradas:');
+            result.forEach((item, index) => {
+                console.log(`   ${index + 1}. ${item.plantName} - Último dato: ${item.timestamp}`);
+            });
+        }
+        
+        return result;
+        
+    } catch (error) {
+        console.error('❌ Error en findRecentByUserId:', error);
+        throw error;
+    }
+}
 
     // READ - Obtener estadísticas de una PLANTA (corregido)
     static async getStatsByPlantId(plantId) {
@@ -219,7 +268,7 @@ export class PlantaData {
         return result[0].count > 0;
     }
 
-    // ✅ NUEVO: Verificar si usuario tiene acceso a planta (corregido)
+    // ✅ Verificar si usuario tiene acceso a planta (corregido)
     static async userHasPlantAccess(userId, plantId) {
         const query = `
             SELECT COUNT(*) as count 

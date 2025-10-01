@@ -50,7 +50,13 @@ export const sendWelcomeEmail = async (email, name) => {
 export const sendPasswordResetEmail = async (email, resetURL) => {
 	const recipient = [{ email }];
 
+	console.log("📧 Preparando envío de email de reset a:", email);
+	console.log("🔗 URL de reset:", resetURL);
+	console.log("👤 Remitente configurado:", sender);
+
 	try {
+		console.log("🚀 Enviando email a través de Mailtrap...");
+		
 		const response = await mailtrapClient.send({
 			from: sender,
 			to: recipient,
@@ -58,13 +64,26 @@ export const sendPasswordResetEmail = async (email, resetURL) => {
 			html: PASSWORD_RESET_REQUEST_TEMPLATE.replace("{resetURL}", resetURL),
 			category: "Password Reset",
 		});
-	} catch (error) {
-		console.error(`Error sending password reset email`, error);
 
-		throw new Error(`Error sending password reset email: ${error}`);
+		console.log("✅ Email enviado exitosamente:", response);
+		console.log("📨 Response completo:", JSON.stringify(response, null, 2));
+		
+		return response;
+	} catch (error) {
+		console.error("❌ Error enviando email de reset:", error);
+		console.error("📝 Stack trace:", error.stack);
+		
+		// Log más detalles del error
+		if (error.response) {
+			console.error("📊 Error response:", error.response);
+		}
+		if (error.message) {
+			console.error("💬 Error message:", error.message);
+		}
+
+		throw new Error(`Error sending password reset email: ${error.message}`);
 	}
 };
-
 export const sendResetSuccessEmail = async (email) => {
 	const recipient = [{ email }];
 

@@ -3,7 +3,7 @@ import { PlantaData } from '../models/plantaModel.js';
 // Crear nuevo dato de planta 
 export const createPlantData = async (req, res) => {
   try {
-    const { batLocal, nivelLocal, senLocal, plantId } = req.body; // ✅ Cambio: plantId (no plantaId)
+    const { batLocal, nivelLocal, senLocal, plantId } = req.body; 
     const userId = req.userId;
     
     if (!batLocal || !nivelLocal || !senLocal || !plantId) {
@@ -21,6 +21,13 @@ export const createPlantData = async (req, res) => {
         message: "No tienes acceso a esta planta" 
       });
     }
+
+
+
+
+    
+
+
 
     const plantData = await PlantaData.create({
       plantId: parseInt(plantId), // ✅ Cambio: plantId (no plantaId)
@@ -44,6 +51,9 @@ export const createPlantData = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+
+
 
 // Obtener todos los datos de planta del usuario autenticado
 export const getMyPlantData = async (req, res) => {
@@ -326,4 +336,43 @@ const calcularEstadisticas = (plantData) => {
     minSenLocal: calculateStats(senLocalValues).min,
     totalReadings: plantData.length
   };
+};
+
+
+// NUEVO: Obtener datos recientes de todas las plantas del usuario
+export const getRecentPlantData = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const limit = parseInt(req.query.limit) || 5;
+    
+    console.log('🔍 DEBUG getRecentPlantData:');
+    console.log('  - req.userId:', userId, `(tipo: ${typeof userId})`);
+    console.log('  - limit:', limit, `(tipo: ${typeof limit})`);
+    
+    // ✅ Validación
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'UserId inválido'
+      });
+    }
+    
+    console.log('🔍 Llamando a PlantaData.findRecentByUserId...');
+    
+    const recentData = await PlantaData.findRecentByUserId(userId, limit);
+    
+    console.log('📊 Datos recientes encontrados:', recentData.length);
+    
+    res.status(200).json({
+      success: true,
+      data: recentData
+    });
+  } catch (error) {
+    console.error('❌ Error en getRecentPlantData:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error al obtener datos recientes de plantas',
+      error: error.message 
+    });
+  }
 };

@@ -7,7 +7,8 @@ import {
   getPlantDataByDateRange,
   updatePlantData,
   deletePlantData,
-  getPlantStats
+  getPlantStats,
+  getRecentPlantData // ✅ NUEVO: Importar el nuevo controlador
 } from "../controllers/plantaController.js";
 
 const router = express.Router();
@@ -20,6 +21,9 @@ router.get("/", verifyToken, getMyPlantData);
 
 // Último dato
 router.get("/latest", verifyToken, getLatestPlantData);
+
+// ✅ NUEVA RUTA: Datos recientes de todas las plantas
+router.get("/recent", verifyToken, getRecentPlantData);
 
 // Estadísticas
 router.get("/stats", verifyToken, getPlantStats);
